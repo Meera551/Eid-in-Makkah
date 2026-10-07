@@ -1,0 +1,1020 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <GL/glut.h>
+#include <cmath>
+#include <iostream>              
+#include <cstdio>                
+#include <stdlib.h>
+#include <GL/gl.h>  
+
+using namespace std;
+
+//Global varibles
+int currentScene = 1;
+float clockAngle = 0.0f;
+float motherX = -0.6f;
+float daughterX = 0.2f;
+int frameCounter = 0;
+
+
+// scene 3 & 4
+float zoomFactor = 1.0f;
+bool isJumping = false;
+float velocity = 0.0f;
+#define PI 3.14159265
+GLint win_width = 500,
+win_hight = 500;
+float sunshineAngle = 0.0f;
+float jumpY = 0.0f;
+const float gravity = -0.004f;
+float motherY = -0.2f;
+float sunX = -1.0f;
+GLuint myTexture1, myTexture2, myTexture3, myTexture6, myTexture7;
+
+char image1Path[] = "photos/Somaqqq.bmp";
+char image2Path[] = "photos/woodennnnnnnnnn.bmp";
+char image3Path[] = "photos/dolabbFinal.bmp";
+char image6Path[] = "photos/sujadd33444.bmp";
+char image7Path[] = "photos/woddon.bmp";
+
+
+// Function to render text on screen
+void drawText(const char* text, float x, float y) {
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glRasterPos2f(x, y);
+    for (const char* c = text; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    }
+}
+
+// For texture
+GLuint LoadTexture(const char* filename, int width, int height) {
+    GLuint texture;
+    unsigned char* data;
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) { return 0; }
+    fseek(file, 54, SEEK_SET);
+    data = (unsigned char*)malloc(width * height * 3);
+    fread(data, width * height * 3, 1, file);
+    fclose(file);
+    for (int i = 0; i < width * height; ++i) {
+        int index = i * 3;
+        unsigned char B = data[index], R = data[index + 2];
+        data[index] = R; data[index + 2] = B;
+    }
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    free(data);
+    return texture;
+}
+
+//For the charectars
+void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius) {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(x, y);
+    for (int i = 0; i <= 20; i++) {
+        float angle = i * 2.0f * PI / 20;
+        glVertex2f(x + (radius * cos(angle)), y + (radius * sin(angle)));
+    }
+    glEnd();
+}
+
+void drawFilledHalfCircleTop(GLfloat x, GLfloat y, GLfloat radius) {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(x, y);
+    for (int i = 0; i <= 100; i++) {
+        float angle = (i * PI / 100);
+        glVertex2f(x + (radius * cos(angle)), y + (radius * sin(angle)));
+    }
+    glEnd();
+}
+
+void drawCircle(float cx, float cy, float r, float red, float green, float blue) {
+    glColor3f(red, green, blue);
+    drawFilledCircle(cx, cy, r);
+}
+
+void drawRect(float x, float y, float w, float h, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glBegin(GL_QUADS);
+    glVertex2f(x, y); glVertex2f(x + w, y);
+    glVertex2f(x + w, y + h); glVertex2f(x, y + h);
+    glEnd();
+}
+
+void sunrotation(int value) {
+    sunshineAngle += 2.0f; // Adjust this number to change speed
+    glutPostRedisplay();
+    glutTimerFunc(16, sunrotation, 0); // 16ms = smooth 60 frames per second
+}
+
+
+//the first scene Roaa's Part
+void scene1() {
+
+    // floor
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture2);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -1.0f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(1.0f, -1.0f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(1.0f, -0.5f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, -0.5f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    // Wardrobe
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture3);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(0.2f, -0.5f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(0.9f, -0.5f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(0.9f, 0.6f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(0.2f, 0.6f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    // Vanity
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture3);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-0.9f, -0.5f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(-0.5f, -0.5f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(-0.5f, 0.1f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-0.9f, 0.1f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+
+    //Mirror
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 1.0f, 1.0f); glVertex2f(-0.88f, 0.2f);
+    glColor3f(0.5, 0.5, 0.8);    glVertex2f(-0.52f, 0.2f);
+    glColor3f(1.0f, 1.0f, 1.0f); glVertex2f(-0.52f, 0.7f);
+    glColor3f(0.5, 0.5, 0.8);    glVertex2f(-0.88f, 0.7f);
+    glEnd();
+
+    // Clock
+    float centerX = -0.1f, centerY = 0.7f, radius = 0.15f;
+    drawCircle(-0.1f, 0.7f, 0.15f, 0.98f, 0.92f, 0.84f);
+    glColor3f(0.6f, 0.45f, 0.2f); glLineWidth(3.0f);
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180.0f;
+        glVertex2f(centerX + radius * cos(theta), centerY + radius * sin(theta));
+    }
+    glEnd();
+    glBegin(GL_LINES);
+    glVertex2f(centerX, centerY); glVertex2f(centerX, centerY + 0.07f);
+    glVertex2f(centerX, centerY); glVertex2f(centerX + 0.11f * cos(clockAngle), centerY + 0.11f * sin(clockAngle));
+    glEnd();
+
+    // Father
+    //Right hand
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.4f, 0.05f);
+    glVertex2f(-0.2f, -0.15f);
+    glVertex2f(-0.27f, -0.22f);
+    glVertex2f(-0.47f, -0.02f);
+    glEnd();
+
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.26f, -0.21f);
+    glVertex2f(-0.21f, -0.16f);
+    glVertex2f(-0.17f, -0.18f);
+    glVertex2f(-0.21f, -0.23f);
+    glEnd();
+
+    // Left hand
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.7f, 0.05f);
+    glVertex2f(-0.9f, -0.15f);
+    glVertex2f(-0.83f, -0.22f);
+    glVertex2f(-0.63f, -0.02f);
+    glEnd();
+
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.89f, -0.16f);
+    glVertex2f(-0.84f, -0.21f);
+    glVertex2f(-0.92f, -0.22f);
+    glVertex2f(-0.96f, -0.19f);
+    glEnd();
+
+    // thobe 
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.7f, -0.75f);
+    glVertex2f(-0.4f, -0.75f);
+    glVertex2f(-0.4f, 0.05f);
+    glVertex2f(-0.7f, 0.05f);
+    glEnd();
+
+    // pocket
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(-0.48f, -0.05f);
+    glVertex2f(-0.42f, -0.05f);
+    glVertex2f(-0.42f, -0.11f);
+    glVertex2f(-0.48f, -0.11f);
+    glEnd();
+    ;
+    // zipper 
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.55f, 0.05f);
+    glVertex2f(-0.55f, -0.25f);
+    glEnd();
+
+
+    //Rifht foot
+    glBegin(GL_QUADS);
+    glVertex2f(-0.5f, -0.75f);
+    glVertex2f(-0.42f, -0.75f);
+    glVertex2f(-0.42f, -0.85f);
+    glVertex2f(-0.5f, -0.85f);
+    glEnd();
+
+    //Left Foot
+    glBegin(GL_QUADS);
+    glVertex2f(-0.68f, -0.75f);
+    glVertex2f(-0.6f, -0.75f);
+    glVertex2f(-0.6f, -0.85f);
+    glVertex2f(-0.68f, -0.85f);
+    glEnd();
+    drawCircle(-0.55f, 0.25f, 0.12f, 1.0f, 0.8f, 0.6f);
+
+
+    // shomaq 
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture1);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_POLYGON); glTexCoord2f(0.0f, 0.0f);
+    glVertex2f(-0.67f, 0.35f); glTexCoord2f(1.0f, 0.0f);
+    glVertex2f(-0.43f, 0.35f); glTexCoord2f(1.0f, 1.0f);
+    glVertex2f(-0.45f, 0.43f); glTexCoord2f(0.0f, 1.0f);
+    glVertex2f(-0.65f, 0.43f);
+    glEnd();
+
+    glBegin(GL_TRIANGLES);
+    glTexCoord2f(0.0f, 0.5f); glVertex2f(-0.65f, 0.35f);
+    glTexCoord2f(0.5f, 0.5f); glVertex2f(-0.75f, 0.35f);
+    glTexCoord2f(0.25f, 0.0f); glVertex2f(-0.75f, 0.0f);
+    glTexCoord2f(0.0f, 0.5f); glVertex2f(-0.45f, 0.35f);
+    glTexCoord2f(0.5f, 0.5f); glVertex2f(-0.35f, 0.35f);
+    glTexCoord2f(0.25f, 0.0f); glVertex2f(-0.35f, 0.0f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    // Mother
+    glPushMatrix();
+    glTranslatef(0.4f, 0.0f, 0.0f);
+
+
+    //body and abaya
+    glColor3f(0.02, 0.02, 0.02);
+    glBegin(GL_POLYGON);
+    glVertex2f(-0.20, -0.10);
+    glVertex2f(0.20, -0.10);
+    glVertex2f(0.25, -0.90);
+    glVertex2f(-0.25, -0.90);
+    glEnd();
+
+    glColor3f(0.12f, 0.12f, 0.12f);
+    glLineWidth(3);
+
+    glBegin(GL_LINES);
+    glVertex2f(0.00, -0.05);
+    glVertex2f(0.00, -0.90);
+    glEnd();
+
+
+    // hijab 
+    glColor3f(0.03f, 0.03f, 0.03f);
+    glBegin(GL_POLYGON);
+    glVertex2f(-0.10, 0.22);
+    glVertex2f(0.10, 0.22);
+    glVertex2f(0.18, -0.10);
+    glVertex2f(0.00, -0.18);
+    glVertex2f(-0.18, -0.10);
+    glEnd();
+
+    // face 
+    drawCircle(0.0, 0.08, 0.10, 0.96, 0.78, 0.62);
+
+    //Right hand
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(0.20, -0.10);
+    glVertex2f(0.27, -0.20);
+    glVertex2f(0.28, -0.30);
+    glVertex2f(0.18, -0.15);
+    glEnd();
+
+    glColor3f(0.96, 0.78, 0.62);
+    glBegin(GL_QUADS);
+    glVertex2f(0.26, -0.27);
+    glVertex2f(0.31, -0.28);
+    glVertex2f(0.30, -0.34);
+    glVertex2f(0.25, -0.33);
+    glEnd();
+
+    //Left hand
+    glBegin(GL_QUADS);
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glVertex2f(-0.20, -0.10);
+    glVertex2f(-0.27, -0.20);
+    glVertex2f(-0.28, -0.30);
+    glVertex2f(-0.18, -0.15);
+    glEnd();
+
+    glBegin(GL_QUADS);
+    glVertex2f(-0.26, -0.27);
+    glVertex2f(-0.31, -0.28);
+    glVertex2f(-0.30, -0.34);
+    glVertex2f(-0.25, -0.33);
+    glEnd();
+
+    //hijab line
+    glColor3f(0.4, 0.4, 0.4);
+    glLineWidth(4);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.20, -0.10);
+    glVertex2f(-0.05, -0.17);
+    glVertex2f(0.10, -0.18);
+    glVertex2f(0.20, -0.10);
+    glEnd();
+    glPopMatrix();
+
+    // Daughter
+    glPushMatrix();
+    glTranslatef(0.15f, -0.405f, 0.0f);
+    glScalef(0.5f, 0.5f, 1.0f);
+
+    //face
+    drawCircle(0, 0, 0.25, 1.0f, 0.8f, 0.6f);
+
+    glColor3f(0.6f, 0.4f, 0.2f);
+    drawFilledHalfCircleTop(0.0f, 0.1f, 0.22f);
+
+    // right hair
+    drawCircle(0.25, 0.15, 0.10, 0.6f, 0.4f, 0.2f);
+
+    // left hair
+    drawCircle(-0.25, 0.15, 0.10, 0.6f, 0.4f, 0.2f);
+
+    // dress
+    glColor3f(1.0f, 0.5f, 0.7f);
+    glBegin(GL_TRIANGLES);
+    glVertex2f(0.0, -0.26);
+    glVertex2f(0.3, -0.75);
+    glVertex2f(-0.3, -0.75);
+    glEnd();
+
+    // Right hand 
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS);
+    glVertex2f(0.07f, -0.35f);
+    glVertex2f(0.5f, -0.55f);
+    glVertex2f(0.45f, -0.6f);
+    glVertex2f(0.1f, -0.4f);
+    glEnd();
+
+    // Left hand 
+    glBegin(GL_QUADS);
+    glVertex2f(-0.07f, -0.35f);
+    glVertex2f(-0.5f, -0.55f);
+    glVertex2f(-0.45f, -0.6f);
+    glVertex2f(-0.1f, -0.4f);
+    glEnd();
+
+    // right leg 
+    glBegin(GL_QUADS);
+    glVertex2f(0.1f, -0.75f);
+    glVertex2f(0.15f, -0.75f);
+    glVertex2f(0.15f, -0.99f);
+    glVertex2f(0.1f, -0.99f);
+    glEnd();
+
+    // left leg 
+    glBegin(GL_QUADS);
+    glVertex2f(-0.1f, -0.75f);
+    glVertex2f(-0.15f, -0.75f);
+    glVertex2f(-0.15f, -0.99f);
+    glVertex2f(-0.1f, -0.99f);
+    glEnd();
+    glPopMatrix();
+
+    // DrawCube
+    glPushMatrix();
+    glTranslatef(-0.82f, 0.17f, 0.0f); glScalef(0.05f, 0.05f, 0.05f);
+    glRotatef(25, 1.0, 0.0, 0.0); glRotatef(35, 0.0, 1.0, 0.0);
+    glEnable(GL_DEPTH_TEST);
+    float s = 1.0f;
+    float P1[3] = { s,s,s },
+        P2[3] = { s,s,-s },
+        P3[3] = { s,-s,-s },
+        P4[3] = { s,-s,s },
+        P5[3] = { -s,s,s },
+        P6[3] = { -s,s,-s },
+        P7[3] = { -s,-s,-s },
+        P8[3] = { -s,-s,s };
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 0.75f, 0.8f); glVertex3fv(P4); glVertex3fv(P3); glVertex3fv(P2); glVertex3fv(P1);
+    glColor3f(0.8f, 0.55f, 0.6f); glVertex3fv(P7); glVertex3fv(P8); glVertex3fv(P5); glVertex3fv(P6);
+    glColor3f(0.9f, 0.65f, 0.7f); glVertex3fv(P3); glVertex3fv(P7); glVertex3fv(P6); glVertex3fv(P2);
+    glVertex3fv(P8); glVertex3fv(P4); glVertex3fv(P1); glVertex3fv(P5);
+    glColor3f(1.0f, 0.9f, 0.95f); glVertex3fv(P5); glVertex3fv(P1); glVertex3fv(P2); glVertex3fv(P6);
+    glColor3f(0.7f, 0.45f, 0.5f); glVertex3fv(P7); glVertex3fv(P3); glVertex3fv(P4); glVertex3fv(P8);
+    glEnd();
+    glDisable(GL_DEPTH_TEST);
+
+    glPopMatrix();
+
+    //Text
+    drawText("Allahu Akbar, Allahu Akbar, Allahu Akbar...", -0.9f, 0.9f);
+    drawText("Abduallah: Hurry, we'll be late for the Eid prayer!", -0.9f, 0.83f);
+    drawText("Rafef: Today will be the best day of the year!", -0.9f, 0.76f);
+    drawText("Sarah: Yes my dear, Eid in Makkah is a double joy.", -0.9f, 0.69f);
+}
+
+void scene2() {
+
+
+    //drawWall
+    glDisable(GL_TEXTURE_2D);
+    glColor3f(0.78f, 0.68f, 0.55f);
+    glBegin(GL_QUADS);
+    glVertex2f(-1.0f, -0.2f);
+    glVertex2f(1.0f, -0.2f);
+    glVertex2f(1.0f, 1.0f);
+    glVertex2f(-1.0f, 1.0f);
+    glEnd();
+
+    //draw Background People
+    for (int i = 0; i < 15; i++) {
+        float x = -0.9f + (i * 0.13f);
+        float y = -0.08f - (i % 3) * 0.04f;
+        float shade = 0.4f + (i % 5) * 0.1f;
+        glColor3f(shade, shade, shade);
+
+        //head
+        glBegin(GL_POLYGON);
+        for (int j = 0; j < 20; j++) {
+            float theta = 2.0f * 3.14159f * j / 20;
+            glVertex2f(x + 0.04f * cos(theta), y + 0.15f + 0.04f * sin(theta));
+        }
+        glEnd();
+
+        //body
+        glBegin(GL_POLYGON);
+        glVertex2f(x - 0.06f, y - 0.1f);
+        glVertex2f(x + 0.06f, y - 0.1f);
+        glVertex2f(x + 0.04f, y + 0.1f);
+        glVertex2f(x - 0.04f, y + 0.1f);
+        glEnd();
+    }
+
+    // drawShelf
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture7);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-0.8f, 0.6f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(0.8f, 0.6f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(0.8f, 0.7f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-0.8f, 0.7f);
+    glEnd();
+
+
+    glDisable(GL_TEXTURE_2D);
+
+    //Books on shelf
+    //blue book
+    glColor3f(0.2f, 0.7f, 0.8f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.75f, 0.7f); glVertex2f(-0.65f, 0.7f);
+    glVertex2f(-0.65f, 0.95f); glVertex2f(-0.75f, 0.95f);
+    glEnd();
+    //red book
+    glColor3f(0.8f, 0.3f, 0.3f);
+    glBegin(GL_QUADS);
+    glVertex2f(0.45f, 0.72f); glVertex2f(0.75f, 0.72f);
+    glVertex2f(0.75f, 0.80f); glVertex2f(0.45f, 0.80f);
+    glEnd();
+    //green book
+    glColor3f(0.3f, 0.8f, 0.4f);
+    glBegin(GL_QUADS);
+    glVertex2f(0.45f, 0.80f); glVertex2f(0.75f, 0.80f);
+    glVertex2f(0.75f, 0.88f); glVertex2f(0.45f, 0.88f);
+    glEnd();
+
+    //Door
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture7);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, -0.2f);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(-0.7f, -0.2f);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(-0.7f, 0.4f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, 0.4f);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    //door handle
+    glColor3f(0.9f, 0.8f, 0.1f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.75f, 0.05f); glVertex2f(-0.73f, 0.05f);
+    glVertex2f(-0.73f, 0.08f); glVertex2f(-0.75f, 0.08f);
+    glEnd();
+
+    //Floor
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, myTexture6); //texture for the prayer mat
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    int tiles = 6;
+    float tileWidth = 2.0f / tiles;
+    for (int i = 0; i < tiles; i++) {
+        float x1 = -1.0f + i * tileWidth;
+        float x2 = x1 + tileWidth;
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(x1, -1.0f);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f(x2, -1.0f);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f(x2, -0.2f);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(x1, -0.2f);
+        glEnd();
+    }
+    glDisable(GL_TEXTURE_2D);
+
+    // (Mother - Scene 2 Style)
+    glPushMatrix();
+    glTranslatef(motherX, -0.2f, 0.0f);
+
+    //abaya
+    glColor3f(0.02f, 0.02f, 0.02f);
+    glBegin(GL_POLYGON);
+    glVertex2f(-0.20f, -0.40f); glVertex2f(0.20f, -0.40f);
+    glVertex2f(0.25f, -0.90f); glVertex2f(-0.25f, -0.90f);
+    glEnd();
+
+    //zipper
+    glColor3f(0.12f, 0.12f, 0.12f); glLineWidth(3);
+    glBegin(GL_LINES); glVertex2f(0.00f, -0.35f); glVertex2f(0.00f, -0.90f); glEnd();
+
+    //hijab
+    glColor3f(0.03f, 0.03f, 0.03f);
+    glBegin(GL_POLYGON);
+    glVertex2f(-0.10f, -0.08f); glVertex2f(0.10f, -0.08f);
+    glVertex2f(0.18f, -0.40f); glVertex2f(0.00f, -0.48f); glVertex2f(-0.18f, -0.40f);
+    glEnd();
+
+    //hijab grey line
+    glColor3f(0.4f, 0.4f, 0.4f);
+    glLineWidth(4);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.20f, -0.40f);
+    glVertex2f(-0.05f, -0.47f);
+    glVertex2f(0.10f, -0.48f);
+    glVertex2f(0.20f, -0.40f);
+    glEnd();
+   
+
+    //face
+    drawCircle(0.0f, -0.22f, 0.10f, 0.96f, 0.78f, 0.62f);
+
+    //arms and hands
+    glColor3f(0.02f, 0.02f, 0.02f);
+    glBegin(GL_QUADS); glVertex2f(0.20f, -0.40f); glVertex2f(0.27f, -0.50f); glVertex2f(0.28, -0.60f); glVertex2f(0.18, -0.45f); glEnd(); //right arm
+    glBegin(GL_QUADS); glVertex2f(-0.20f, -0.40f); glVertex2f(-0.27f, -0.50f); glVertex2f(-0.28, -0.60f); glVertex2f(-0.18, -0.45f); glEnd(); //left arm
+
+    glColor3f(0.96f, 0.78f, 0.62f);
+    glBegin(GL_QUADS); glVertex2f(0.26f, -0.57f); glVertex2f(0.31f, -0.58f); glVertex2f(0.30f, -0.64f); glVertex2f(0.25f, -0.63f); glEnd(); //right hand
+    glBegin(GL_QUADS); glVertex2f(-0.26f, -0.57f); glVertex2f(-0.31f, -0.58f); glVertex2f(-0.30f, -0.64f); glVertex2f(-0.25f, -0.63f); glEnd(); //left hand
+
+    glPopMatrix();
+
+    //Daughter
+    glPushMatrix();
+    glTranslatef(daughterX, -0.2f, 0.0f);
+    glScalef(0.4f, 0.4f, 1.0f);
+    glColor3f(1.0f, 0.8f, 0.6f); drawFilledCircle(0, 0, 0.25f); // face
+    glColor3f(0.6f, 0.4f, 0.2f); drawFilledHalfCircleTop(0.0f, 0.1f, 0.22f); // hair
+    drawFilledCircle(0.25f, 0.15f, 0.10f); drawFilledCircle(-0.25f, 0.15f, 0.10f);
+    glColor3f(1.0f, 0.5f, 0.7f); glBegin(GL_TRIANGLES); glVertex2f(0.0f, -0.26f); glVertex2f(0.3f, -0.75f); glVertex2f(-0.3f, -0.75f); glEnd(); // dress
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS); glVertex2f(0.07f, -0.35f); glVertex2f(0.5f, -0.55f); glVertex2f(0.45f, -0.6f); glVertex2f(0.1f, -0.4f); glEnd(); // hands
+    glBegin(GL_QUADS); glVertex2f(-0.07f, -0.35f); glVertex2f(-0.5f, -0.55f); glVertex2f(-0.45f, -0.6f); glVertex2f(-0.1f, -0.4f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(0.1f, -0.75f); glVertex2f(0.15f, -0.75f); glVertex2f(0.15f, -0.99f); glVertex2f(0.1f, -0.99f); glEnd(); // legs
+    glBegin(GL_QUADS); glVertex2f(-0.1f, -0.75f); glVertex2f(-0.15f, -0.75f); glVertex2f(-0.15f, -0.99f); glVertex2f(-0.1f, -0.99f); glEnd();
+    glPopMatrix();
+
+    //Text
+    drawText("Rafef: Mama... why is everyone so happy?", -0.9f, 0.9f);
+    drawText("Sarah: Because Eid here is not just about sweets...", -0.9f, 0.83f);
+    drawText("It is about hearts that love each other.", -0.9f, 0.76f);
+}
+
+void renderScene3() {
+    //backround tramsformations
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+
+    // sky
+    drawRect(-1.0f, 0.1f, 2.0f, 0.9f, 0.6f, 0.8f, 1.0f);
+    // floor
+    drawRect(-1.0f, -1.0f, 2.0f, 1.1f, 0.3f, 0.3f, 0.3f);
+
+    for (float i = -1.0f; i < 1.0f; i += 0.4f) {
+        drawRect(i, -0.5f, 0.2f, 0.02f, 1.0f, 1.0f, 1.0f); //street lines
+    }
+
+    //drawing the sun
+    glColor3f(1.0f, 1.0f, 0.0f);
+    drawFilledCircle(-0.75f, 0.75f, 0.15f);
+    glLineWidth(2.0);
+    glBegin(GL_LINES);
+    for (int i = 0; i < 12; i++) {
+        float theta = 2.0f * PI * i / 12.0f;
+        glVertex2f(-0.75f + 0.18f * cos(theta), 0.75f + 0.18f * sin(theta));
+        glVertex2f(-0.75f + 0.28f * cos(theta), 0.75f + 0.28f * sin(theta));
+    }
+    glEnd();
+
+    //Trees
+    //first tree
+    float t1 = -0.4f;
+    drawRect(t1 - 0.02f, 0.1f, 0.04f, 0.2f, 0.4f, 0.2f, 0.0f);
+    glColor3f(0.0f, 0.5f, 0.0f);
+    glBegin(GL_TRIANGLES); glVertex2f(t1 - 0.1f, 0.3f); glVertex2f(t1 + 0.1f, 0.3f); glVertex2f(t1, 0.55f); glEnd();
+
+    //second tree
+    float t2 = 0.6f;
+    drawRect(t2 - 0.02f, 0.1f, 0.04f, 0.2f, 0.4f, 0.2f, 0.0f);
+    glColor3f(0.0f, 0.5f, 0.0f);
+    glBegin(GL_TRIANGLES); glVertex2f(t2 - 0.1f, 0.3f); glVertex2f(t2 + 0.1f, 0.3f); glVertex2f(t2, 0.55f); glEnd();
+
+    // street and lines
+    drawRect(-1.0f, -0.1f, 2.0f, 0.2f, 0.7f, 0.7f, 0.7f);
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_LINES);
+    for (float x = -1.0f; x <= 1.0f; x += 0.2f) { glVertex2f(x, -0.1f); glVertex2f(x, 0.1f); }
+    glEnd();
+
+    //draw Background People
+    for (int i = 0; i < 15; i++) {
+        float px = -0.9f + (i * 0.13f);
+        float py = 0.05f - (i % 3) * 0.04f;
+        float shade = 0.4f + (i % 5) * 0.1f;
+        glColor3f(shade, shade, shade);
+        drawFilledCircle(px, py + 0.15f, 0.05f);
+        glBegin(GL_POLYGON);
+        glVertex2f(px - 0.06f, py - 0.1f); glVertex2f(px + 0.06f, py - 0.1f);
+        glVertex2f(px + 0.04f, py + 0.1f); glVertex2f(px - 0.04f, py + 0.1f);
+        glEnd();
+    }
+
+    //Draw Mother (using motherX variable)
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1.3, 1.3, -1.3, 1.3);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glPushMatrix();
+    glTranslatef(motherX, 0.6f, 0.0f);
+
+    //oringinal mother 
+    glColor3f(0.02, 0.02, 0.02); glBegin(GL_POLYGON); glVertex2f(-0.20, -0.40); glVertex2f(0.20, -0.40); glVertex2f(0.25, -0.90); glVertex2f(-0.25, -0.90); glEnd();
+    glColor3f(0.12f, 0.12f, 0.12f); glLineWidth(3); glBegin(GL_LINES); glVertex2f(0.00, -0.35); glVertex2f(0.00, -0.90); glEnd();
+    glColor3f(0.03f, 0.03f, 0.03f); glBegin(GL_POLYGON); glVertex2f(-0.10, -0.08); glVertex2f(0.10, -0.08); glVertex2f(0.18, -0.40); glVertex2f(0.00, -0.48); glVertex2f(-0.18, -0.40); glEnd();
+    drawCircle(0.0, -0.22, 0.10, 0.96, 0.78, 0.62);
+    glColor3f(0.02, 0.02, 0.02);
+    glBegin(GL_QUADS); glVertex2f(0.20, -0.40); glVertex2f(0.27, -0.50); glVertex2f(0.28, -0.60); glVertex2f(0.18, -0.45); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.20, -0.40); glVertex2f(-0.27, -0.50); glVertex2f(-0.28, -0.60); glVertex2f(-0.18, -0.45); glEnd();
+    glColor3f(0.96, 0.78, 0.62);
+    glBegin(GL_QUADS); glVertex2f(0.26, -0.57); glVertex2f(0.31, -0.58); glVertex2f(0.30, -0.64); glVertex2f(0.25, -0.63); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.26, -0.57); glVertex2f(-0.31, -0.58); glVertex2f(-0.30, -0.64); glVertex2f(-0.25, -0.63); glEnd();
+    glColor3f(0.4, 0.4, 0.4); glLineWidth(4); glBegin(GL_LINE_STRIP); glVertex2f(-0.20, -0.40); glVertex2f(-0.05, -0.47); glVertex2f(0.10, -0.48); glVertex2f(0.20, -0.40); glEnd();
+
+    glPopMatrix();
+
+    // translating the Daughter a bit to the left
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-2.5, 2.5, -2.5, 2.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glPushMatrix();
+
+    // daughterX to move her to the left
+    glTranslatef(daughterX - 0.05f, 0.25f, 0.0f);
+    glScalef(0.7f, 0.7f, 1.0f); //change size
+
+    //face
+    glColor3f(1.0f, 0.8f, 0.6f); drawFilledCircle(0, 0, 0.25);
+    //haur
+    glColor3f(0.6f, 0.4f, 0.2f); drawFilledHalfCircleTop(0.0f, 0.1f, 0.22f);
+    drawFilledCircle(0.25, 0.15, 0.10); drawFilledCircle(-0.25, 0.15, 0.10);
+
+    //dress 
+    glColor3f(1.0f, 0.5f, 0.7f); glBegin(GL_TRIANGLES); glVertex2f(0.0, -0.26); glVertex2f(0.3, -0.75); glVertex2f(-0.3, -0.75); glEnd();
+
+    //hands and legs
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS); glVertex2f(0.07f, -0.35f); glVertex2f(0.5f, -0.55f); glVertex2f(0.45f, -0.6f); glVertex2f(0.1f, -0.4f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.07f, -0.35f); glVertex2f(-0.5f, -0.55f); glVertex2f(-0.45f, -0.6f); glVertex2f(-0.1f, -0.4f); glEnd();
+    glRectf(0.1, -0.75, 0.15, -0.99); glRectf(-0.1, -0.75, -0.15, -0.99);
+
+    //Date Basket
+    float bX = 0.40f; float bY = -0.50f;
+    glColor3f(0.55f, 0.27f, 0.07f);
+    glBegin(GL_POLYGON);
+    glVertex2f(bX - 0.12f, bY - 0.10f); glVertex2f(bX + 0.12f, bY - 0.10f);
+    glVertex2f(bX + 0.16f, bY + 0.05f); glVertex2f(bX - 0.16f, bY + 0.05f);
+    glEnd();
+
+    //basket hand
+    glColor3f(0.65f, 0.35f, 0.15f); glLineWidth(3);
+    glBegin(GL_LINE_STRIP);
+    for (int i = 0; i <= 50; i++) {
+        float theta = 3.14159f * i / 50.0f;
+        glVertex2f(bX + 0.14f * cos(theta), bY + 0.05f + 0.12f * sin(theta));
+    }
+    glEnd(); glLineWidth(1);
+
+    //Dates
+    glColor3f(0.35f, 0.15f, 0.05f);
+    drawFilledCircle(bX - 0.06f, bY + 0.02f, 0.035f); drawFilledCircle(bX + 0.06f, bY + 0.02f, 0.035f);
+    drawFilledCircle(bX, bY + 0.02f, 0.035f); drawFilledCircle(bX - 0.03f, bY + 0.06f, 0.035f);
+    drawFilledCircle(bX + 0.03f, bY + 0.06f, 0.035f); drawFilledCircle(bX, bY + 0.09f, 0.035f);
+
+    glPopMatrix();
+
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    //Text
+    drawText("Rafef: Mama... they don't know each other?", -0.9f, 0.9f);
+    drawText("Sarah: They may not know names...", -0.9f, 0.83f);
+    drawText("But they know they are brothers and sisters.", -0.9f, 0.76f);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+//the last scene Sahar's Part
+void scene4() {
+    //street
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    //street drawing 
+    drawRect(-1.0f, 0.0f, 2.0f, 1.0f, 0.6f, 0.8f, 1.0f); // sky
+    drawRect(-1.0f, -1.0f, 2.0f, 1.1f, 0.3f, 0.3f, 0.3f); // ground
+
+    for (float i = -1.0f; i < 1.0f; i += 0.4f) {
+        drawRect(i, -0.5f, 0.2f, 0.02f, 1.0f, 1.0f, 1.0f); // rects on the street
+    }
+
+    drawRect(-1.0f, -0.1f, 2.0f, 0.2f, 0.7f, 0.7f, 0.7f); // sidewalk
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glLineWidth(2);
+    for (float i = -1.0f; i <= 1.0f; i += 0.2f) {
+        glBegin(GL_LINES); glVertex2f(i, -0.1f); glVertex2f(i, 0.1f); glEnd();
+    }
+
+    //tress and lights
+    for (float xPos = -0.5f; xPos <= 0.5f; xPos += 1.0f) {
+        drawRect(xPos, 0.1f, 0.03f, 0.15f, 0.4f, 0.2f, 0.0f);
+        glColor3f(0.0f, 0.5f, 0.0f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(xPos - 0.1f, 0.25f); glVertex2f(xPos + 0.13f, 0.25f); glVertex2f(xPos + 0.015f, 0.45f);
+        glEnd();
+    }
+    for (float xPos = -0.8f; xPos <= 0.8f; xPos += 1.6f) {
+        drawRect(xPos, 0.1f, 0.02f, 0.5f, 0.2f, 0.2f, 0.2f);
+        glColor3f(1.0f, 1.0f, 0.6f); drawFilledCircle(xPos + 0.01f, 0.6f, 0.04f);
+    }
+
+    //rotating sun
+    glPushMatrix();
+    glTranslatef(-0.6f, 0.80f, 0.0f);
+    glRotatef(sunshineAngle, 0.0f, 0.0f, 1.0f);
+    glColor3f(1.0f, 1.0f, 0.0f);
+    drawFilledCircle(0, 0, 0.12f);
+    glLineWidth(2.0); glBegin(GL_LINES);
+    for (int i = 0; i < 8; i++) {
+        float ang = i * PI / 4.0f;
+        glVertex2f(0.15f * cos(ang), 0.15f * sin(ang)); glVertex2f(0.30f * cos(ang), 0.30f * sin(ang));
+    }
+    glEnd(); glPopMatrix();
+
+    //crowd
+    for (int i = 0; i < 15; i++) {
+        float px = -0.9f + (i * 0.13f); float py = 0.05f - (i % 3) * 0.04f;
+        float shade = 0.4f + (i % 5) * 0.1f;
+        glColor3f(shade, shade, shade);
+        drawFilledCircle(px, py + 0.15f, 0.04f);
+        glBegin(GL_POLYGON);
+        glVertex2f(px - 0.06f, py - 0.1f); glVertex2f(px + 0.06f, py - 0.1f);
+        glVertex2f(px + 0.04f, py + 0.1f); glVertex2f(px - 0.04f, py + 0.1f);
+        glEnd();
+    }
+
+    //Father
+    glPushMatrix();
+    glTranslatef(-0.15f, 0.35f, 0.0f);
+    glScalef(0.6f, 0.6f, 1.0f);
+    //drawing the body
+    glColor3f(1.0f, 1.0f, 1.0f); glBegin(GL_QUADS); glVertex2f(-0.4f, 0.05f); glVertex2f(-0.2f, -0.15f); glVertex2f(-0.27f, -0.22f); glVertex2f(-0.47f, -0.02f); glEnd();
+    glColor3f(1.0f, 0.8f, 0.6f); glBegin(GL_QUADS); glVertex2f(-0.26f, -0.21f); glVertex2f(-0.21f, -0.16f); glVertex2f(-0.17f, -0.18f); glVertex2f(-0.21f, -0.23f); glEnd();
+    glColor3f(1.0f, 1.0f, 1.0f); glBegin(GL_QUADS); glVertex2f(-0.7f, 0.05f); glVertex2f(-0.9f, -0.15f); glVertex2f(-0.83f, -0.22f); glVertex2f(-0.63f, -0.02f); glEnd();
+    glColor3f(1.0f, 0.8f, 0.6f); glBegin(GL_QUADS); glVertex2f(-0.89f, -0.16f); glVertex2f(-0.84f, -0.21f); glVertex2f(-0.92f, -0.22f); glVertex2f(-0.96f, -0.19f); glEnd();
+    glColor3f(1.0f, 1.0f, 1.0f); glBegin(GL_QUADS); glVertex2f(-0.7f, -0.75f); glVertex2f(-0.4f, -0.75f); glVertex2f(-0.4f, 0.05f); glVertex2f(-0.7f, 0.05f); glEnd();
+    glColor3f(0.0f, 0.0f, 0.0f); glLineWidth(2.0f); glBegin(GL_LINE_LOOP); glVertex2f(-0.48f, -0.05f); glVertex2f(-0.42f, -0.05f); glVertex2f(-0.42f, -0.11f); glVertex2f(-0.48f, -0.11f); glEnd();
+    glBegin(GL_LINES); glVertex2f(-0.55f, 0.05f); glVertex2f(-0.55f, -0.25f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.5f, -0.75f); glVertex2f(-0.42f, -0.75f); glVertex2f(-0.42f, -0.85f); glVertex2f(-0.5f, -0.85f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.68f, -0.75f); glVertex2f(-0.6f, -0.75f); glVertex2f(-0.6f, -0.85f); glVertex2f(-0.68f, -0.85f); glEnd();
+    drawCircle(-0.55f, 0.25f, 0.12f, 1.0f, 0.8f, 0.6f);
+    glEnable(GL_TEXTURE_2D); glBindTexture(GL_TEXTURE_2D, myTexture1); glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_POLYGON); glTexCoord2f(0, 0); glVertex2f(-0.67, 0.35); glTexCoord2f(1, 0); glVertex2f(-0.43, 0.35); glTexCoord2f(1, 1); glVertex2f(-0.45, 0.43); glTexCoord2f(0, 1); glVertex2f(-0.65, 0.43); glEnd();
+    glBegin(GL_TRIANGLES); glTexCoord2f(0, 0.5); glVertex2f(-0.65, 0.35); glTexCoord2f(0.5, 0.5); glVertex2f(-0.75, 0.35); glTexCoord2f(0.25, 0); glVertex2f(-0.75, 0.0);
+    glTexCoord2f(0, 0.5); glVertex2f(-0.45, 0.35); glTexCoord2f(0.5, 0.5); glVertex2f(-0.35, 0.35); glTexCoord2f(0.25, 0); glVertex2f(-0.35, 0.0); glEnd();
+    glDisable(GL_TEXTURE_2D); glPopMatrix();
+
+    //Mother
+    glPushMatrix();
+    glTranslatef(0.15f, 0.45f, 0.0f);
+    glScalef(0.75f, 0.75f, 1.0f);
+
+    //hijab
+    glColor3f(0.03, 0.03, 0.03); glBegin(GL_POLYGON); glVertex2f(-0.10, -0.08); glVertex2f(0.10, -0.08); glVertex2f(0.18, -0.40); glVertex2f(0.00, -0.48); glVertex2f(-0.18, -0.40); glEnd();
+
+    //abaya
+    glColor3f(0.02, 0.02, 0.02); glBegin(GL_POLYGON); glVertex2f(-0.20, -0.40); glVertex2f(0.20, -0.40); glVertex2f(0.25, -0.90); glVertex2f(-0.25, -0.90); glEnd();
+
+    //zipper for abaya
+    glColor3f(0.12f, 0.12f, 0.12f);
+    glLineWidth(3);
+    glBegin(GL_LINES);
+    glVertex2f(0.00, -0.35); glVertex2f(0.00, -0.90);
+    glEnd();
+
+    // hands
+    glColor3f(0.02, 0.02, 0.02); glBegin(GL_QUADS); glVertex2f(0.20, -0.40); glVertex2f(0.27, -0.50); glVertex2f(0.28, -0.60); glVertex2f(0.18, -0.45); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.20, -0.40); glVertex2f(-0.27, -0.50); glVertex2f(-0.28, -0.60); glVertex2f(-0.18, -0.45); glEnd();
+    glColor3f(0.96, 0.78, 0.62);
+    glBegin(GL_QUADS); glVertex2f(0.26, -0.57); glVertex2f(0.31, -0.58); glVertex2f(0.30, -0.64); glVertex2f(0.25, -0.63); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.26, -0.57); glVertex2f(-0.31, -0.58); glVertex2f(-0.30, -0.64); glVertex2f(-0.25, -0.63); glEnd();
+    drawCircle(0.0, -0.22, 0.10, 0.96, 0.78, 0.62); // الوجه
+
+    //line for hijab
+    glColor3f(0.4, 0.4, 0.4);
+    glLineWidth(4);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.20, -0.40); glVertex2f(-0.05, -0.47); glVertex2f(0.10, -0.48); glVertex2f(0.20, -0.40);
+    glEnd();
+
+    glPopMatrix();
+
+    //daughter
+    glPushMatrix();
+    glTranslatef(0.48f, 0.08f + jumpY, 0.0f);
+    glScalef(0.38f, 0.38f, 1.0f);
+    glColor3f(1.0f, 0.8f, 0.6f); drawFilledCircle(0, 0, 0.25);
+    glColor3f(0.6f, 0.4f, 0.2f); drawFilledHalfCircleTop(0.0f, 0.1f, 0.22f);
+    drawFilledCircle(0.25, 0.15, 0.10); drawFilledCircle(-0.25, 0.15, 0.10);
+    glColor3f(1.0f, 0.5f, 0.7f); glBegin(GL_TRIANGLES); glVertex2f(0.0, -0.26); glVertex2f(0.3, -0.75); glVertex2f(-0.3, -0.75); glEnd();
+    glColor3f(1.0f, 0.8f, 0.6f);
+    glBegin(GL_QUADS); glVertex2f(0.07f, -0.35f); glVertex2f(0.5f, -0.55f); glVertex2f(0.45f, -0.6f); glVertex2f(0.1f, -0.4f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.07f, -0.35f); glVertex2f(-0.5f, -0.55f); glVertex2f(-0.45f, -0.6f); glVertex2f(-0.1f, -0.4f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(0.1f, -0.75f); glVertex2f(0.15f, -0.75f); glVertex2f(0.15f, -0.99f); glVertex2f(0.1f, -0.99f); glEnd();
+    glBegin(GL_QUADS); glVertex2f(-0.1f, -0.75f); glVertex2f(-0.15f, -0.75f); glVertex2f(-0.15f, -0.99f); glVertex2f(-0.1f, -0.99f); glEnd();
+    glPopMatrix();
+
+    //Text
+    drawText("Rafef: Now I know! Eid in Makkah makes the world feel like one family.", -0.9f, 0.9f);
+    drawText("Hearts meet here before names.", -0.9f, 0.83f);
+    drawText("I want every Eid to be here, so I feel I have a very big family!", -0.9f, 0.76f);
+}
+
+
+
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        if (currentScene == 1) { // from scene 1 to scene 2
+            currentScene = 2;
+        }
+        else if (currentScene == 2) {// from scene 2 to scene 3
+            currentScene = 3;
+        }
+        else if (currentScene == 3) {// from scene 3 to scene 4
+            currentScene = 4;
+        }
+        else {// from scene 4 to scene 1
+            currentScene = 1;
+        }
+
+        glutPostRedisplay();
+    }
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    if (key == 'd' || key == 'D') motherX += 0.05f;
+    if (key == 'a' || key == 'A') motherX -= 0.05f;
+    if ((key == 'm' || key == 'M') && !isJumping) { isJumping = true; velocity = 0.04f; };
+
+    glutPostRedisplay();
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    glScalef(zoomFactor, zoomFactor, 1.0f);
+    if (currentScene == 1) scene1();
+    else if (currentScene == 2) scene2();
+    else if (currentScene == 3) renderScene3();
+    else if (currentScene == 4) scene4();
+    glutSwapBuffers();
+}
+
+void timer(int value) {
+    //jumping
+    if (isJumping) {
+        jumpY += velocity;
+        velocity += gravity;
+        //if she reached the floor
+        if (jumpY <= 0.0f) {
+            jumpY = 0.0f;
+            isJumping = false;
+            velocity = 0.0f;
+        }
+    }
+
+    frameCounter++;
+    if (frameCounter >= 60) { // clock wise moving every second
+        clockAngle -= (2.0f * 3.14159265f / 60.0f);
+        frameCounter = 0; // make it restart from zero 
+    }
+
+    sunX += 0.005f;
+    if (sunX > 1.0f) sunX = -1.0f; // bring the sun if it went too left
+
+    //SunShine rotation
+    sunshineAngle += 2.0f;
+    glutPostRedisplay();
+    glutTimerFunc(16, timer, 0);
+}
+
+void init() {
+
+    glClearColor(0.85f, 0.85f, 0.85f, 1.0f);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);
+    myTexture1 = LoadTexture(image1Path, 512, 512);
+    myTexture2 = LoadTexture(image2Path, 512, 512);
+    myTexture3 = LoadTexture(image3Path, 512, 512);
+    myTexture6 = LoadTexture(image6Path, 512, 512);
+    myTexture7 = LoadTexture(image7Path, 512, 512);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(700, 700);
+    glutCreateWindow("Eid Al-Fitr in Makkah");
+    init();
+    glutDisplayFunc(display);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc(keyboard);
+    glutTimerFunc(0, timer, 0);
+    glutMainLoop();
+    return 0;
+
+
+}
+//List of Refrences
+//1-Toal, R. (n.d.).OpenGL examples.Loyola Marymount University.https://cs.lmu.edu/~ray/notes/openglexamples/ 
+//2-The freeglut Programming Consortium. (2013, January).API documentation - The freeglut project.https ://freeglut.sourceforge.net/docs/api.php 
+//3-Suraj Sharma. (2018, June 24).OpenGL / C++ 3D Tutorial 22 - Texture class (Nice and tidy!)[Video].YouTube.https ://www.youtube.com/watch?v=4tdy1izUv_Y
